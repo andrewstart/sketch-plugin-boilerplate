@@ -23,7 +23,7 @@ buildPlugin(error => {
     }
 
     console.log(chalk.green.bold('✓ FINISHED BUILD '));
-    console.log(chalk.grey.italic('Run `yarn bundle` to create the final plugin bundle to be published.'))
+    console.log(chalk.grey.italic('Run `npm run bundle` to create the final plugin bundle to be published.'))
   });
 });
 
