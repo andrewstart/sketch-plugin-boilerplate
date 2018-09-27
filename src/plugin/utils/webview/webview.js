@@ -30,6 +30,8 @@ log(BridgeMessageHandler.userContentController_didReceiveScriptMessage);
 
 export function initBridgedWebView (frame, bridgeName = 'SketchBridge') {
   const config = WKWebViewConfiguration.alloc().init();
+  // enable right click -> inspect element
+  config.preferences()._developerExtrasEnabled = true;
   const messageHandler = BridgeMessageHandler.alloc().init();
   config.userContentController().addScriptMessageHandler_name(messageHandler, bridgeName);
   return WKWebView.alloc().initWithFrame_configuration(frame, config);
