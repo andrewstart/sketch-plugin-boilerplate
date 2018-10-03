@@ -1,38 +1,34 @@
-var fs = require('fs-extra');
-var chalk = require('chalk');
-var webpack = require('webpack');
+const fs = require('fs-extra');
+const chalk = require('chalk');
 
-var webpackConfig = require('../../config/webview/webpack-prod');
-var paths = require('../../config/webview/paths');
+const rollup = require('rollup');
+const paths = require('../../config/webview/paths');
+const config = require('../../config/webview/rollup');
 
-function build (callback) {
-  console.log(chalk.grey.italic('Build web view'));
-
-  console.log('  ✓ Remove old build...');
-  fs.emptyDirSync(paths.build);
-
-  webpack(webpackConfig).run((err, stats) => {
-    // Catch all errors
-    var error = null;
-    if (err) {
-      error = err;
-    } else if (stats.compilation.errors.length) {
-      error = stats.compilation.errors;
-    } else if (process.env.CI && stats.compilation.warnings.length) {
-      error = stats.compilation.warnings;
+async function build() {
+    console.log(chalk.grey.italic('Build web views'));
+    
+    await fs.emptyDir(paths.build);
+    console.log('  ✓ Removed old build...');
+    
+    const input = config.input;
+    const output = config.output;
+    for (let i = 0; i < input.length; ++i) {
+        // create a bundle
+        const bundle = await rollup.rollup(input[i]);
+        
+        // or write the bundle to disk
+        await bundle.write(output[i]);
+        
+        // Done :)
+        console.log(chalk.green.bold(`  ✓ Web view "${paths.entry[i]}" compiled successfully`));
     }
-
-    if (error) {
-      callback(error);
-      return;
-    }
-
-    // Done :)
-    console.log(chalk.green.bold('  ✓ Web view compiled successfully'));
+    
+    await fs.copy(paths.assetSrc, paths.assetDest);
+    console.log('  ✓ Copied assets...');
+    
+    // new line
     console.log();
-
-    callback();
-  });
 }
 
 module.exports = build;

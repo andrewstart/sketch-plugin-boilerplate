@@ -10,3 +10,5 @@ knowledge/
 # Docs files
 docs/.sass-cache
 docs/_site
+
+.rpt2_cache

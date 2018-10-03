@@ -1,31 +1,24 @@
 process.env.NODE_ENV = 'production';
 
-var fs = require('fs-extra');
-var chalk = require('chalk');
-var { logError } = require('./utils/build');
+const fs = require('fs-extra');
+const chalk = require('chalk');
+const { logError } = require('./utils/build');
 
-var buildPlugin = require('./plugin/build');
-var buildWebView = require('./webview/build');
+const buildPlugin = require('./plugin/build');
+const buildWebView = require('./webview/build');
+const paths = require('../config/plugin/paths');
 
 console.log(chalk.bold('Create production build'));
 console.log();
 
-buildPlugin(error => {
-  if (error) {
-    logError(error);
-    return;
-  }
-
-  buildWebView(error => {
-    if (error) {
-      logError(error);
-      return;
-    }
-
+buildWebView()
+.then(() => {
+    return buildPlugin();
+})
+.then(() => {
     console.log(chalk.green.bold('✓ FINISHED BUILD '));
-    console.log(chalk.grey.italic('Run `npm run bundle` to create the final plugin bundle to be published.'))
-  });
+    console.log(chalk.green('You can find the plugin bundle in ' + chalk.italic(paths.bundle)));
+})
+.catch((err) => {
+    logError(err);
 });
-
-
-

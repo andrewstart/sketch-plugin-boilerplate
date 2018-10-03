@@ -1,77 +1,55 @@
-var fs = require('fs-extra');
-var chalk = require('chalk');
-var webpack = require('webpack');
+const fs = require('fs-extra');
+const chalk = require('chalk');
+const webpack = require('webpack');
+const {exec} = require("child_process");
 
-var webpackConfig = require('../../config/plugin/webpack');
-var paths = require('../../config/plugin/paths');
+const paths = require('../../config/plugin/paths');
 
-var manifest = require('../../src/plugin/manifest.json');
-var pkg = require('../../package.json');
+const manifest = require('../../src/plugin/manifest.json');
+const pkg = require('../../package.json');
 
-function build (callback) {
-  console.log(chalk.grey.italic('Build plugin'));
-
-  console.log('  ✓ Remove old build...');
-  fs.emptyDirSync(paths.build);
-
-  webpack(webpackConfig).run((err, stats) => {
-    // Catch all errors
-    var error = null;
-    if (err) {
-      error = err;
-    } else if (stats.compilation.errors.length) {
-      error = stats.compilation.errors;
-    } else if (process.env.CI && stats.compilation.warnings.length) {
-      error = stats.compilation.warnings;
-    }
-
-    if (error) {
-      callback(error);
-      return;
-    }
-
-    // HACK!
-    // Add global handlers
-    console.log('  ✓ Add global handlers');
-    manifest.commands.forEach(function(command) {
-      var file = paths.build + '/' + command.script;
-      var compiled = fs.readFileSync(file);
-      if (command.handlers) {
-        Object.values(command.handlers.actions).forEach((handler) => {
-          compiled += '\n\nvar ' + handler + ' = handlers.' + handler + ';';
-        });
-      } else {
-        compiled +=
-          '\n\nvar ' + command.handler + ' = handlers.' + command.handler + ';';
-      }
-
-      fs.writeFileSync(file, compiled);
-    });
-
+async function build() {
+    console.log(chalk.grey.italic('Build plugin'));
+    
     // Copy manifest.json + add version number form manifest
-    console.log('  ✓ Copy manifest (version ' + pkg.version + ')');
     manifest.version = pkg.version;
-    fs.outputJson(paths.build + '/manifest.json', manifest);
-
+    manifest.author = pkg.author;
+    manifest.authorEmail = pkg.authorEmail;
+    manifest.name = pkg.name;
+    manifest.description = pkg.description;
+    fs.outputJson(paths.src + '/manifest.json', manifest);
+    console.log('  ✓ Copy manifest (version ' + pkg.version + ')');
+    
     // Copy framework(s)
     if (fs.existsSync(paths.frameworks)) {
-      var list = fs.readdirSync(paths.frameworks);
-      var frameworks = list.filter(item => item.endsWith('.framework'));
-      if (frameworks.length) {
-        console.log('  ✓ Copy frameworks');
-        fs.emptyDirSync(paths.frameworksBuild);
-        frameworks.forEach(function (item) {
-          fs.copySync(paths.frameworks + '/' + item, paths.frameworksBuild + '/' + item);
-        });
-      }
+        const list = await fs.readdir(paths.frameworks);
+        const frameworks = list.filter(item => item.endsWith('.framework'));
+        if (frameworks.length) {
+            console.log('  ✓ Copy frameworks');
+            await fs.emptyDir(paths.frameworksBuild);
+            for (const item of frameworks) {
+                await fs.copy(paths.frameworks + '/' + item, paths.frameworksBuild + '/' + item);
+            }
+        }
     }
-
+    
+    await new Promise((resolve, reject) => {
+        const options = {
+            cwd: process.cwd()
+        };
+        exec('node_modules/.bin/skpm-build', options, (err, stdout, stderr) => {
+            if (err) {
+                console.error(stderr);
+                return reject(stderr || stdout);
+            }
+            console.log(stdout);
+            resolve(stdout);
+        });
+    });
+    
     // Done :)
     console.log(chalk.green.bold('  ✓ Plugin compiled successfully'));
     console.log();
-
-    callback();
-  });
 }
 
 module.exports = build;
