@@ -10,7 +10,9 @@ import {
     open as openPanel,
     close as closePanel,
     isOpen as isPanelOpen,
-    sendAction as sendPanelAction
+    sendAction as sendPanelAction,
+    closeActivePanels,
+    openCurrentPanels
 } from './panel';
 
 export {
@@ -21,5 +23,7 @@ export {
     openPanel,
     closePanel,
     isPanelOpen,
-    sendPanelAction
+    sendPanelAction,
+    closeActivePanels,
+    openCurrentPanels
 };

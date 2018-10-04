@@ -27,9 +27,7 @@ export class BridgedWebView {
     
     public init(path:string, frame:NSRect):void {
         const webView = this.createView(frame);
-        const url = NSURL.fileURLWithPath(getFilePath(path));
-        // log('File URL');
-        // log(url);
+        const url = NSURL.fileURLWithPath(path);
         
         webView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable);
         webView.loadRequest(NSURLRequest.requestWithURL(url));
@@ -50,8 +48,7 @@ export class BridgedWebView {
                     const bridgeMessage:BridgeMessage = JSON.parse(String(message.body()));
                     this.receiveAction(bridgeMessage.name, bridgeMessage.payload);
                 } catch (e) {
-                    log('Could not parse bridge message');
-                    log(e.message);
+                    console.log('Could not parse bridge message', e, message.body());
                 }
             }
         });
@@ -63,7 +60,6 @@ export class BridgedWebView {
             superclass: WKWebView,
             ['viewWillMoveToSuperview:']: (view:NSView|null) => {
                 if (!view && this.fiber) {
-                    log('Cleaning up!');
                     this.fiber.cleanup();
                 }
             }
@@ -72,18 +68,21 @@ export class BridgedWebView {
     }
 
     private receiveAction(name:string, payload:any = {}) {
-        if (name === MESSAGE_TO_WV_CONTEXT) {
+        if (name == MESSAGE_TO_WV_CONTEXT) {
             try {
                 const func = new Function(payload);
                 func.call(this);
             } catch (e) {
-                log('Unable to evaluate message to plugin');
-                log(payload);
+                console.warn('Unable to evaluate message to plugin', e, payload);
             }
             return;
         }
         if (this.onActionReceived) {
-            this.onActionReceived(name, payload);
+            try {
+                this.onActionReceived(name, payload);
+            } catch (e) {
+                console.warn('Unable to perform action received callback', e, payload);
+            }
         }
     }
 }

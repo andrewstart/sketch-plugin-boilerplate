@@ -17,7 +17,7 @@ async function build() {
     manifest.authorEmail = pkg.authorEmail;
     manifest.name = pkg.name;
     manifest.description = pkg.description;
-    fs.outputJson(paths.src + '/manifest.json', manifest);
+    fs.outputJson(paths.src + '/manifest.json', manifest, {spaces:4});
     console.log('  ✓ Copy manifest (version ' + pkg.version + ')');
     
     // Copy framework(s)

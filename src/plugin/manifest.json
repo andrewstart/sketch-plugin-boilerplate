@@ -1,1 +1,84 @@
-{"name":"sketch-plugin-boilerplate","identifier":"com.julianburr.sketch-plugin-boilerplate","description":"Basic development boilerplate for Sketch plugins","author":"Julian Burr","disableCocoaScriptPreprocessor":false,"commands":[{"script":"index.js","handler":"helloWorld","name":"Hello World","identifier":"helloWorld"},{"script":"index.js","handler":"openWindow","name":"Open Window","identifier":"openWindow"},{"script":"index.js","handler":"togglePanel","name":"Toggle Panel","identifier":"togglePanel"},{"script":"index.js","handler":"handleBridgeMessage","name":"Handle Bridge Message","identifier":"handleBridgeMessage"},{"script":"index.js","handler":"sendMessageToWindow","name":"Send Bridge Message","identifier":"sendMessageToWindow"},{"script":"index.js","handler":"sendMessageToPanel","name":"Send Bridge Message","identifier":"sendMessageToPanel"},{"script":"index.js","handler":"sendRequest","name":"Send HTTP Request","identifier":"sendRequest"},{"script":"index.js","handler":"handleHttpResponse","name":"Handle HTTP Response","identifier":"handleHttpResponse"}],"menu":{"isRoot":1,"items":[{"title":"Sketch Plugin Boilerplate","items":["helloWorld","sendRequest","-",{"title":"Window","items":["openWindow","sendMessageToWindow"]},{"title":"Panel","items":["togglePanel","sendMessageToPanel"]}]}]},"version":"0.0.3"}
+{
+    "name": "sketch-plugin-boilerplate",
+    "identifier": "com.julianburr.sketch-plugin-boilerplate",
+    "description": "Basic development boilerplate for Sketch plugins",
+    "author": "Julian Burr",
+    "disableCocoaScriptPreprocessor": false,
+    "commands": [
+        {
+            "script": "index.js",
+            "handler": "helloWorld",
+            "name": "Hello World",
+            "identifier": "helloWorld"
+        },
+        {
+            "script": "index.js",
+            "handler": "openWindow",
+            "name": "Open Window",
+            "identifier": "openWindow"
+        },
+        {
+            "script": "index.js",
+            "handler": "togglePanel",
+            "name": "Toggle Panel",
+            "identifier": "togglePanel"
+        },
+        {
+            "script": "index.js",
+            "handler": "handleBridgeMessage",
+            "name": "Handle Bridge Message",
+            "identifier": "handleBridgeMessage"
+        },
+        {
+            "script": "index.js",
+            "handler": "sendMessageToWindow",
+            "name": "Send Bridge Message",
+            "identifier": "sendMessageToWindow"
+        },
+        {
+            "script": "index.js",
+            "handler": "sendMessageToPanel",
+            "name": "Send Bridge Message",
+            "identifier": "sendMessageToPanel"
+        },
+        {
+            "script": "index.js",
+            "handlers": {
+                "actions": {
+                    "OpenDocument": "openActivePanels",
+                    "CloseDocument": "closeAllPanels"
+                }
+            },
+            "name": "Action Listeners",
+            "identifier": "action-listeners"
+        }
+    ],
+    "menu": {
+        "isRoot": 1,
+        "items": [
+            {
+                "title": "Sketch Plugin Boilerplate",
+                "items": [
+                    "helloWorld",
+                    "sendRequest",
+                    "-",
+                    {
+                        "title": "Window",
+                        "items": [
+                            "openWindow",
+                            "sendMessageToWindow"
+                        ]
+                    },
+                    {
+                        "title": "Panel",
+                        "items": [
+                            "togglePanel",
+                            "sendMessageToPanel"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "version": "0.0.3"
+}

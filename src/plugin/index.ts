@@ -1,6 +1,8 @@
 /// <reference types="sketch.d.ts" />
+/// <reference types="../../typings/skpm" />
 import { initWithContext, document } from './utils/core';
 import * as WebViewUtils from './utils/webview';
+import Dom = require('sketch/dom');
 
 // These are just used to identify the window(s)
 // Change them to whatever you need e.g. if you need to support multiple
@@ -37,4 +39,19 @@ export function sendMessageToWindow(context:SketchContext) {
 export function sendMessageToPanel(context:SketchContext) {
     initWithContext(context);
     WebViewUtils.sendPanelAction(panelIdentifier, 'foo', {foo: 'bar'});
+}
+
+export function closeAllPanels(context:SketchContext) {
+    initWithContext(context);
+    WebViewUtils.closeActivePanels();
+}
+
+export function openActivePanels(context:SketchContext) {
+    setTimeout(() => {
+        if (!context.document) {
+            context.document = Dom.getSelectedDocument().sketchObject;
+        }
+        initWithContext(context);
+        WebViewUtils.openCurrentPanels();
+    }, 250);
 }

@@ -11,6 +11,6 @@ module.exports = function (config, isPluginCommand) {
         use: 'ts-loader',
         exclude: /node_modules/
     });
-    config.resolve.extensions = [ '.tsx', '.ts' ];
+    config.resolve.extensions = [ '.tsx', '.ts', '.js' ];
     config.entry = config.entry.replace('.js', '.ts');
 }

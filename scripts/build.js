@@ -1,4 +1,6 @@
-process.env.NODE_ENV = 'production';
+if (process.argv.includes("--prod")) {
+    process.env.NODE_ENV = 'production';
+}
 
 const fs = require('fs-extra');
 const chalk = require('chalk');

@@ -1,7 +1,16 @@
 import { document } from '../core';
 import { toArray } from '../formatter';
-import { BridgedWebView, sendActionToWebView } from './webview';
+import { BridgedWebView, sendActionToWebView, getFilePath } from './webview';
 import {MESSAGE_TO_WV_CONTEXT} from '../../../shared';
+import Settings = require('sketch/settings');
+import Dom = require('sketch/dom');
+
+const OPEN_PANELS_KEY = 'open-panels';
+interface OpenPanelData {
+    id: string;
+    path: string;
+    options: OpenOptions;
+}
 
 export function toggle(identifier:string, path?:string, width?:OpenOptions) {
     if (isOpen(identifier)) {
@@ -11,18 +20,61 @@ export function toggle(identifier:string, path?:string, width?:OpenOptions) {
     }
 }
 
-// TODO: Handle document closing (fiber should get released, probably)
+/**
+ * Closes active panels in the current document.
+ */
+export function closeActivePanels():void {
+    const panels:OpenPanelData[] = Settings.settingForKey(OPEN_PANELS_KEY) || [];
+    for (const panel of panels) {
+        close(panel.id, false);
+    }
+}
+
+export function openCurrentPanels():void {
+    const panels:OpenPanelData[] = Settings.settingForKey(OPEN_PANELS_KEY) || [];
+    for (const panel of panels) {
+        openPanel(panel.id, panel.path, panel.options);
+    }
+}
 
 let webview:BridgedWebView = null;
 
 interface OpenOptions {
     width?: number;
 }
-export function open(identifier:string, path = 'index.html', options:OpenOptions = {}) {
+export function open(identifier:string, path = 'index.html', options:OpenOptions = {}, openForAll:boolean = true) {
+    // get an absolute path
+    path = getFilePath(path);
+    if (openForAll) {
+        // note that we opened this panel
+        const panels:OpenPanelData[] = Settings.settingForKey(OPEN_PANELS_KEY) || [];
+        if (!panels.find(panel => panel.id == identifier)) {
+            panels.push({id: identifier, options, path});
+            Settings.setSettingForKey(OPEN_PANELS_KEY, panels);
+        }
+        // for each open document, open the panel
+        Dom.getDocuments().forEach((doc) => {
+            openPanel(identifier, path, options, doc.sketchObject);
+        });
+    } else {
+        openPanel(identifier, path, options);
+    }
+}
+
+function openPanel(identifier:string, path:string, options:OpenOptions, doc?:MSDocument) {
     const { width } = options;
     const frame = NSMakeRect(0, 0, width || 250, 600); // the height doesn't really matter here
-    const contentView = document.documentWindow().contentView();
-    if (!contentView || isOpen(identifier)) {
+    doc = doc || document;
+    if (!doc) {
+        console.warn('Trying to open panel in document, but no document');
+        return;
+    }
+    if (!doc.documentWindow()) {
+        console.warn('Trying to open panel in document, but no document window');
+        return;
+    }
+    const contentView = doc.documentWindow().contentView();
+    if (!contentView || findWebView(identifier, doc)) {
         return false;
     }
     
@@ -41,6 +93,11 @@ export function open(identifier:string, path = 'index.html', options:OpenOptions
         // remove the panel from the document
         removePanel(identifier);
     });
+    
+    // TODO: Expose this for more general use
+    webview.onActionReceived = (name, payload) => {
+        console.log('Received ', name, payload);
+    };
     
     // Inject our webview into the right spot in the subview list
     const views = (stageView.subviews as ()=>NSArray<NSView>)();
@@ -66,16 +123,25 @@ export function open(identifier:string, path = 'index.html', options:OpenOptions
     stageView.adjustSubviews();
 }
 
-export function close(identifier:string) {
-    // send message to the original JS context that created the view and tell it to clean up
-    sendAction(identifier, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()');
+export function close(identifier:string, closeForAll:boolean = true) {
+    if (closeForAll) {
+        // record the panel as closed
+        const panels:OpenPanelData[] = Settings.settingForKey(OPEN_PANELS_KEY) || [];
+        if (panels.find(panel => panel.id == identifier)) {
+            Settings.setSettingForKey(OPEN_PANELS_KEY, panels.filter(panel => panel.id != identifier));
+        }
+        // for each open document, close the panel
+        Dom.getDocuments().forEach((doc) => {
+            sendAction(identifier, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()', doc.sketchObject);
+        });
+    } else {
+        // close just the current document
+        // send message to the original JS context that created the view and tell it to clean up
+        sendAction(identifier, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()');
+    }
 }
 
-function removePanel(identifier:string, actuallyRemove = true) {
-    const contentView = document.documentWindow().contentView();
-    if (!contentView) {
-        return false;
-    }
+function removePanel(identifier:string) {
     // Search for web view panel
     const view = findWebView(identifier);
     if (view) {
@@ -86,11 +152,16 @@ function removePanel(identifier:string, actuallyRemove = true) {
 }
 
 export function isOpen(identifier:string) {
-    return !!findWebView(identifier);
+    const panels:OpenPanelData[] = Settings.settingForKey(OPEN_PANELS_KEY) || [];
+    return !!panels.find(panel => panel.id == identifier);
 }
 
-export function findWebView(identifier:string) {
-    const contentView = document.documentWindow().contentView();
+export function findWebView(identifier:string, doc?:MSDocument) {
+    doc = doc || document;
+    if (!doc || !doc.documentWindow()) {
+        return null;
+    }
+    const contentView = (doc || document).documentWindow().contentView();
     if (!contentView) {
         return null;
     }
@@ -99,6 +170,6 @@ export function findWebView(identifier:string) {
     return views.find(view => (view.identifier as ()=>string)() == identifier) as WKWebView;
 }
 
-export function sendAction(identifier:string, name:string, payload:any = {}) {
-    return sendActionToWebView(findWebView(identifier), name, payload);
+export function sendAction(identifier:string, name:string, payload:any = {}, document?:MSDocument) {
+    return sendActionToWebView(findWebView(identifier, document), name, payload);
 }
