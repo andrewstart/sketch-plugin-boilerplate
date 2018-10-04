@@ -21,6 +21,10 @@
       return returnValue;
     }
 
+    const WV_TO_PLUGIN_BRIDGE = 'Sketch';
+    const PLUGIN_TO_WV_BRIDGE = 'sketchBridge';
+    const MESSAGE_TO_WV_CONTEXT = '__eval__';
+
     const win = window;
     /**
      * Bridge function that allows the plugin to send data to the
@@ -30,7 +34,13 @@
     const bridge = (jsonString) => {
         try {
             const jsonData = jsonString ? JSON.parse(jsonString) : {};
-            window.dispatchEvent(new CustomEvent(jsonData.name, { detail: jsonData.payload }));
+            if (jsonData.name === MESSAGE_TO_WV_CONTEXT) {
+                // send to the original context that created this webview
+                sendAction(jsonData.name, jsonData.payload);
+            }
+            else {
+                window.dispatchEvent(new CustomEvent(jsonData.name, { detail: jsonData.payload }));
+            }
         }
         catch (error) {
             console.error(error);
@@ -50,12 +60,13 @@
      * Send message to plugin using the message handler
      * Uses promise structure
      */
-    const sendAction = (name, payload = {}) => {
+    const sendAction = (name, payload) => {
         return new Promise((resolve, reject) => {
             if (!check()) {
                 reject(new Error('Could not connect to Sketch!'));
             }
-            win.webkit.messageHandlers.Sketch.postMessage(JSON.stringify({ name, payload }));
+            const data = { name, payload };
+            win.webkit.messageHandlers[WV_TO_PLUGIN_BRIDGE].postMessage(JSON.stringify(data));
             resolve();
         });
     };
@@ -75,6 +86,6 @@
     });
 
     // expose bridge for the plugin to call from outside the webview
-    window.sketchBridge = bridge;
+    window[PLUGIN_TO_WV_BRIDGE] = bridge;
 
 }());

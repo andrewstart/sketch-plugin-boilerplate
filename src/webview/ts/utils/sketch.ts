@@ -1,3 +1,5 @@
+import {WV_TO_PLUGIN_BRIDGE, MESSAGE_TO_WV_CONTEXT, BridgeMessage} from '../../../shared';
+
 const win = window as (Window & {webkit:{messageHandlers:{Sketch:any}}});
 
 /**
@@ -7,8 +9,13 @@ const win = window as (Window & {webkit:{messageHandlers:{Sketch:any}}});
  */
 export const bridge = (jsonString:string) => {
     try {
-        const jsonData = jsonString ? JSON.parse(jsonString) : {};
-        window.dispatchEvent(new CustomEvent(jsonData.name, {detail: jsonData.payload}));
+        const jsonData:BridgeMessage = jsonString ? JSON.parse(jsonString) : {};
+        if (jsonData.name === MESSAGE_TO_WV_CONTEXT) {
+            // send to the original context that created this webview
+            sendAction(jsonData.name, jsonData.payload);
+        } else {
+            window.dispatchEvent(new CustomEvent(jsonData.name, {detail: jsonData.payload}));
+        }
     } catch (error) {
         console.error(error);
     }
@@ -29,12 +36,13 @@ export const check = () => {
  * Send message to plugin using the message handler
  * Uses promise structure
  */
-export const sendAction = (name:string, payload:any = {}) => {
+export const sendAction = (name:string, payload?:any) => {
     return new Promise((resolve, reject) => {
         if (!check()) {
             reject(new Error('Could not connect to Sketch!'));
         }
-        win.webkit.messageHandlers.Sketch.postMessage(JSON.stringify({name, payload}));
+        const data:BridgeMessage = {name, payload};
+        win.webkit.messageHandlers[WV_TO_PLUGIN_BRIDGE].postMessage(JSON.stringify(data));
         resolve();
     });
 };

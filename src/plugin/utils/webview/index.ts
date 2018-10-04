@@ -1,11 +1,4 @@
-import {
-    windowIdentifier,
-    panelIdentifier,
-    getFilePath,
-    createWebView,
-    sendAction as sendActionToWebView,
-    receiveAction
-} from './webview';
+export * from './webview';
 
 import {
     open as openWindow,
@@ -21,13 +14,6 @@ import {
 } from './panel';
 
 export {
-    windowIdentifier,
-    panelIdentifier,
-    getFilePath,
-    createWebView,
-    sendActionToWebView,
-    receiveAction,
-
     openWindow,
     sendWindowAction,
 

@@ -1,6 +1,6 @@
 import {
-    createWebView,
-    sendAction as sendActionToWebView
+    BridgedWebView,
+    sendActionToWebView
 } from './webview';
 
 interface OpenOptions {
@@ -8,6 +8,8 @@ interface OpenOptions {
     height?: number;
     title?: string;
 }
+
+// TODO: Update & handle window closing - https://github.com/skpm/sketch-module-web-view/blob/master/lib/set-delegates.js
 
 export function open(identifier:string, path = 'index.html', options:OpenOptions = {}) {
     // Sensible defaults for options
@@ -29,11 +31,12 @@ export function open(identifier:string, path = 'index.html', options:OpenOptions
     const threadDictionary = NSThread.mainThread().threadDictionary();
     threadDictionary[identifier] = window;
 
-    const webView = createWebView(path, frame);
+    const webView = new BridgedWebView();
+    webView.init(path, frame);
 
     window.title = title;
     window.center();
-    window.contentView().addSubview(webView);
+    window.contentView().addSubview(webView.view);
 
     window.makeKeyAndOrderFront(null);
 }
