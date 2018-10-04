@@ -2,7 +2,7 @@
 node_modules/
 
 # Build folder
-Contents/
+Resources/
 
 # Ignore knowledge base for now until cleaned up :D
 knowledge/
