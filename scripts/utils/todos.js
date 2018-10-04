@@ -22,7 +22,7 @@ function readDir(dirPath){
           if (matchLine && matchLine.length > 0) {
             matchLine.forEach(function(match){
               todoCnt++;
-              console.log(chalk.gray(' *:' + (line + '      ').substring(0, 6)) + match)
+              console.log(chalk.gray(' *:' + (String(line + 1).padEnd(6, ' ') + match)));
             });
           }
         });
