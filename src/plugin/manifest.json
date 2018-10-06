@@ -7,27 +7,21 @@
     "commands": [
         {
             "script": "index.js",
-            "handler": "helloWorld",
-            "name": "Hello World",
-            "identifier": "helloWorld"
-        },
-        {
-            "script": "index.js",
             "handler": "openWindow",
             "name": "Open Window",
             "identifier": "openWindow"
         },
         {
             "script": "index.js",
-            "handler": "togglePanel",
-            "name": "Toggle Panel",
-            "identifier": "togglePanel"
+            "handler": "closeWindow",
+            "name": "Close Window",
+            "identifier": "closeWindow"
         },
         {
             "script": "index.js",
-            "handler": "handleBridgeMessage",
-            "name": "Handle Bridge Message",
-            "identifier": "handleBridgeMessage"
+            "handler": "togglePanel",
+            "name": "Toggle Panel",
+            "identifier": "togglePanel"
         },
         {
             "script": "index.js",
@@ -45,8 +39,7 @@
             "script": "index.js",
             "handlers": {
                 "actions": {
-                    "OpenDocument": "openActivePanels",
-                    "CloseDocument": "closeAllPanels"
+                    "OpenDocument": "openActivePanels"
                 }
             },
             "name": "Action Listeners",
@@ -59,14 +52,12 @@
             {
                 "title": "Sketch Plugin Boilerplate",
                 "items": [
-                    "helloWorld",
-                    "sendRequest",
-                    "-",
                     {
                         "title": "Window",
                         "items": [
                             "openWindow",
-                            "sendMessageToWindow"
+                            "sendMessageToWindow",
+                            "closeWindow"
                         ]
                     },
                     {

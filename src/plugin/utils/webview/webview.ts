@@ -4,7 +4,7 @@ import Async = require('sketch/async');
 import {WV_TO_PLUGIN_BRIDGE, PLUGIN_TO_WV_BRIDGE, MESSAGE_TO_WV_CONTEXT, BridgeMessage} from '../../../shared';
 
 export function getFilePath(file:string) {
-    return `${pluginFolderPath}/Contents/Resources/webview/${file}`;
+    return `${pluginFolderPath}/Contents/Resources/${file}`;
 }
 
 export function sendActionToWebView(webView:WKWebView, name:string, payload:any = {}) {
@@ -16,18 +16,21 @@ export function sendActionToWebView(webView:WKWebView, name:string, payload:any 
     webView.evaluateJavaScript_completionHandler(script, null);
 }
 
-export class BridgedWebView {
-    public onActionReceived:(name:string, payload:any)=>any;
+// variables for ObjectiveC classes, in case we make more than one in a JS context
+let BridgeMessageHandler:any = null;
+let ViewClass:any = null;
+
+export abstract class BridgedWebView {
+    /**
+     * Must be overridden so that panels can be recreated automatically for new windows.
+     */
+    protected abstract onActionReceived(name:string, payload:any):any;
     public fiber:Async.Fiber = null;
     public view:WKWebView = null;
     
-    public initWithFile(file:string, frame:NSRect):void {
-        this.init(getFilePath(file), frame);
-    }
-    
-    public init(path:string, frame:NSRect):void {
+    protected init(path:string, frame:NSRect):void {
         const webView = this.createView(frame);
-        const url = NSURL.fileURLWithPath(path);
+        const url = path.startsWith('http') ? NSURL.URLWithString(path) : NSURL.fileURLWithPath(getFilePath(path));
         
         webView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable);
         webView.loadRequest(NSURLRequest.requestWithURL(url));
@@ -42,28 +45,32 @@ export class BridgedWebView {
         // enable right click -> inspect element
         config.preferences()._developerExtrasEnabled = true;
         // This is a helper delegate, that handles incoming bridge messages
-        const BridgeMessageHandler = ObjCClass({
-            'userContentController:didReceiveScriptMessage:':(_controller, message) => {
-                try {
-                    const bridgeMessage:BridgeMessage = JSON.parse(String(message.body()));
-                    this.receiveAction(bridgeMessage.name, bridgeMessage.payload);
-                } catch (e) {
-                    console.log('Could not parse bridge message', e, message.body());
+        if (!BridgeMessageHandler) {
+            BridgeMessageHandler = ObjCClass({
+                'userContentController:didReceiveScriptMessage:':(_controller, message) => {
+                    try {
+                        const bridgeMessage:BridgeMessage = JSON.parse(String(message.body()));
+                        this.receiveAction(bridgeMessage.name, bridgeMessage.payload);
+                    } catch (e) {
+                        console.log('Could not parse bridge message', e, message.body());
+                    }
                 }
-            }
-        });
+            });
+        }
         const messageHandler = BridgeMessageHandler.alloc().init();
         config.userContentController().addScriptMessageHandler_name(messageHandler, WV_TO_PLUGIN_BRIDGE);
         
-        const ViewClass = ObjCClass({
-            classname: 'WebViewWrapper',
-            superclass: WKWebView,
-            ['viewWillMoveToSuperview:']: (view:NSView|null) => {
-                if (!view && this.fiber) {
-                    this.fiber.cleanup();
+        if (!ViewClass) {
+            ViewClass = ObjCClass({
+                classname: 'WebViewWrapper',
+                superclass: WKWebView,
+                ['viewWillMoveToSuperview:']: (view:NSView|null) => {
+                    if (!view && this.fiber) {
+                        this.fiber.cleanup();
+                    }
                 }
-            }
-        });
+            });
+        }
         return ViewClass.alloc().initWithFrame_configuration(frame, config);
     }
 
