@@ -39,6 +39,14 @@ const RegisteredPanels = new Map<string, typeof Panel>();
 
 export interface OpenOptions {
     width?: number;
+    height?: number;
+}
+
+export enum PanelLocation {
+    RightOfDocument,
+    LeftOfDocument,
+    /** Not supported yet */
+    LeftPane
 }
 
 let WindowCloseDelegate:any;
@@ -68,7 +76,11 @@ export abstract class Panel extends BridgedWebView {
     /**
      * Override this in subclasses if desired.
      */
-    protected static openOptions:OpenOptions = {width:250};
+    protected static openOptions:OpenOptions = {width:250, height:40};
+    /**
+     * Override this in subclasses if desired.
+     */
+    protected static location:PanelLocation = PanelLocation.RightOfDocument;
     /**
      * The document that this panel is attached to (may be different from document in script context).
      */
@@ -79,7 +91,8 @@ export abstract class Panel extends BridgedWebView {
         this.document = doc || document;
         this.open((this.constructor as typeof Panel).IDENTIFIER,
             (this.constructor as typeof Panel).path,
-            (this.constructor as typeof Panel).openOptions);
+            (this.constructor as typeof Panel).openOptions,
+            (this.constructor as typeof Panel).location);
     }
     
     /**
@@ -142,9 +155,11 @@ export abstract class Panel extends BridgedWebView {
     /**
      * Is called by the constructor.
      */
-    protected open(identifier:string, path:string, options:OpenOptions) {
+    protected open(identifier:string, path:string, options:OpenOptions, location:PanelLocation) {
         const width = options.width || 250;
-        const frame = NSMakeRect(0, 0, width, 600); // the height doesn't really matter here
+        const height = options.height || 40;
+        // the height doesn't really matter here, unless going in the left panel
+        const frame = NSMakeRect(0, 0, width, height);
         if (!this.document) {
             console.warn('Trying to open panel in document, but no document');
             return;
@@ -185,18 +200,42 @@ export abstract class Panel extends BridgedWebView {
         }
         (this.document.documentWindow() as any).setDelegate(WindowCloseDelegate.new());
         
+        switch (location) {
+            case PanelLocation.RightOfDocument:
+                this.addToStage();
+                break;
+            case PanelLocation.LeftOfDocument:
+                this.addToStage(true);
+                break;
+            case PanelLocation.LeftPane:
+                console.error('Placement in the left pane is not supported yet');
+                break;
+        }
+    }
+    
+    private addToStage(leftOfDocument:boolean = false) {
+        const contentView = this.document.documentWindow().contentView();
+        const stageView = (contentView.subviews as ()=>NSArray<NSView>)().objectAtIndex(0);
         // Inject our webview into the right spot in the subview list
         const views = (stageView.subviews as ()=>NSArray<NSView>)();
         const finalViews:NSView[] = [];
         let pushedWebView = false;
         for (let i = 0; i < views.count(); i++) {
             const view = views.objectAtIndex(i);
-            finalViews.push(view);
             // NOTE: change the view identifier here if you want to add
             //  your panel anywhere else - view_canvas is the document area
-            if (!pushedWebView && (view.identifier as ()=>string)() == 'view_canvas') {
-                finalViews.push(this.view);
-                pushedWebView = true;
+            if ((view.identifier as ()=>string)() == 'view_canvas') {
+                if (!pushedWebView && leftOfDocument) {
+                    finalViews.push(this.view);
+                    pushedWebView = true;
+                }
+                finalViews.push(view);
+                if (!pushedWebView && !leftOfDocument) {
+                    finalViews.push(this.view);
+                    pushedWebView = true;
+                }
+            } else {
+                finalViews.push(view);
             }
         }
         // If it hasn't been pushed yet, push our web view
