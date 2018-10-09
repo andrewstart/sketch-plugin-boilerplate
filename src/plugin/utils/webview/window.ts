@@ -2,7 +2,7 @@ import { BridgedWebView, sendActionToWebView } from './webview';
 import {MESSAGE_TO_WV_CONTEXT} from '../../../shared';
 import ObjCClass from 'cocoascript-class';
 
-export interface OpenOptions {
+export interface WindowOpenOptions {
     width?: number;
     height?: number;
     title?: string;
@@ -26,7 +26,7 @@ export abstract class Window extends BridgedWebView {
     /**
      * Override this in subclasses if desired.
      */
-    protected static openOptions:OpenOptions = {width:450, height:350, title: 'Boilerplate Window'};
+    protected static openOptions:WindowOpenOptions = {width:450, height:350, title: 'Boilerplate Window'};
     
     public static open() {
         // create a new window. This shouldn't get garbage collected.
@@ -35,11 +35,11 @@ export abstract class Window extends BridgedWebView {
     
     public static close() {
         // send message to the original JS context that created the view and tell it to clean up
-        sendAction(this.IDENTIFIER, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()');
+        sendActionToWindow(this.IDENTIFIER, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()');
     }
     
     public static sendAction(name:string, payload:any = {}) {
-        sendAction(this.IDENTIFIER, name, payload);
+        sendActionToWindow(this.IDENTIFIER, name, payload);
     }
     
     // Actually an NSPanel/NSWindow
@@ -55,7 +55,7 @@ export abstract class Window extends BridgedWebView {
     /**
      * Is called by the constructor.
      */
-    protected open(identifier:string, path:string, options:OpenOptions) {
+    protected open(identifier:string, path:string, options:WindowOpenOptions) {
         // Sensible defaults for options
         const {
             width = 450,
@@ -117,12 +117,12 @@ export abstract class Window extends BridgedWebView {
     }
 }
 
-export function findWebView(identifier:string) {
+export function findWindow(identifier:string) {
     const threadDictionary = NSThread.mainThread().threadDictionary();
     const window = threadDictionary[identifier];
     return window.contentView().subviews()[0];
 }
 
-export function sendAction(identifier:string, name:string, payload:any = {}) {
-    return sendActionToWebView(findWebView(identifier), name, payload);
+export function sendActionToWindow(identifier:string, name:string, payload:any = {}) {
+    return sendActionToWebView(findWindow(identifier), name, payload);
 }

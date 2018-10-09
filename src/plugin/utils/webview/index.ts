@@ -1,11 +1,5 @@
 export * from './webview';
 
-export {
-    Window
-} from './window';
+export * from './window';
 
-export {
-    Panel,
-    closeActivePanels,
-    openActivePanels
-} from './panel';
+export * from './panel';

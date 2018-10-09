@@ -37,7 +37,7 @@ export function openActivePanels():void {
 // registered panels so we can create them reactively
 const RegisteredPanels = new Map<string, typeof Panel>();
 
-export interface OpenOptions {
+export interface PanelOpenOptions {
     width?: number;
     height?: number;
 }
@@ -76,7 +76,7 @@ export abstract class Panel extends BridgedWebView {
     /**
      * Override this in subclasses if desired.
      */
-    protected static openOptions:OpenOptions = {width:250, height:40};
+    protected static openOptions:PanelOpenOptions = {width:250, height:40};
     /**
      * Override this in subclasses if desired.
      */
@@ -125,12 +125,12 @@ export abstract class Panel extends BridgedWebView {
             }
             // for each open document, close the panel
             Dom.getDocuments().forEach((doc) => {
-                sendAction(this.IDENTIFIER, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()', doc.sketchObject);
+                sendActionToPanel(this.IDENTIFIER, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()', doc.sketchObject);
             });
         } else {
             // close just the current document
             // send message to the original JS context that created the view and tell it to clean up
-            sendAction(this.IDENTIFIER, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()');
+            sendActionToPanel(this.IDENTIFIER, MESSAGE_TO_WV_CONTEXT, 'this.fiber.cleanup()');
         }
     }
     
@@ -149,13 +149,13 @@ export abstract class Panel extends BridgedWebView {
      * Send an action to this panel.
      */
     public static sendAction(name:string, payload:any = {}, document?:MSDocument) {
-        sendAction(this.IDENTIFIER, name, payload, document);
+        sendActionToPanel(this.IDENTIFIER, name, payload, document);
     }
     
     /**
      * Is called by the constructor.
      */
-    protected open(identifier:string, path:string, options:OpenOptions, location:PanelLocation) {
+    protected open(identifier:string, path:string, options:PanelOpenOptions, location:PanelLocation) {
         const width = options.width || 250;
         const height = options.height || 40;
         // the height doesn't really matter here, unless going in the left panel
@@ -169,7 +169,7 @@ export abstract class Panel extends BridgedWebView {
             return;
         }
         const contentView = this.document.documentWindow().contentView();
-        if (!contentView || findWebView(identifier, this.document)) {
+        if (!contentView || findPanel(identifier, this.document)) {
             return;
         }
         
@@ -266,7 +266,7 @@ export function isOpen(identifier:string) {
 /**
  * Find a webview attached to a given (or the current) document.
  */
-export function findWebView(identifier:string, doc?:MSDocument) {
+export function findPanel(identifier:string, doc?:MSDocument) {
     doc = doc || document;
     if (!doc || !doc.documentWindow()) {
         return null;
@@ -283,6 +283,6 @@ export function findWebView(identifier:string, doc?:MSDocument) {
 /**
  * Send an action to a panel.
  */
-export function sendAction(identifier:string, name:string, payload:any = {}, document?:MSDocument) {
-    sendActionToWebView(findWebView(identifier, document), name, payload);
+export function sendActionToPanel(identifier:string, name:string, payload:any = {}, document?:MSDocument) {
+    sendActionToWebView(findPanel(identifier, document), name, payload);
 }
