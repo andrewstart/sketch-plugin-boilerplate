@@ -1,5 +1,6 @@
 var path = require('path');
 var fs = require('fs-extra');
+const pkg = require('../../package.json');
 
 var appDirectory = fs.realpathSync(process.cwd());
 function resolveApp(relativePath) {
@@ -15,7 +16,7 @@ module.exports = {
   manifest: resolveApp('src/plugin/manifest.json'),
   build: resolveApp('Contents/Sketch'),
   bundleSrc: resolveApp('Contents'),
-  bundle: resolveApp('sketch-plugin-boilerplate.sketchplugin'),
+  bundle: resolveApp(pkg.skpm.main),
   frameworks,
   frameworksBuild: resolveApp('Contents/Resources/frameworks'),
   watch: [src, frameworks]
