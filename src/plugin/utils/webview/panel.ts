@@ -173,7 +173,6 @@ export abstract class Panel extends BridgedWebView {
             return;
         }
         
-        const stageView = (contentView.subviews as ()=>NSArray<NSView>)().objectAtIndex(0);
         this.init(path, frame);
         this.view.identifier = identifier;
         // if the fiber gets cleaned up, remove the panel
