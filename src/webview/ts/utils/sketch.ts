@@ -1,4 +1,4 @@
-import {WV_TO_PLUGIN_BRIDGE, MESSAGE_TO_WV_CONTEXT, BridgeMessage} from '../../../shared';
+import {WV_TO_PLUGIN_BRIDGE, PLUGIN_TO_WV_BRIDGE, MESSAGE_TO_WV_CONTEXT, BridgeMessage} from '../../../shared';
 
 const win = window as (Window & {webkit:{messageHandlers:{Sketch:any}}});
 
@@ -20,6 +20,9 @@ export const bridge = (jsonString:string) => {
         console.error(error);
     }
 };
+
+// expose bridge for the plugin to call from outside the webview
+(window as any)[PLUGIN_TO_WV_BRIDGE] = bridge;
 
 /**
  * Check if message handler is available
