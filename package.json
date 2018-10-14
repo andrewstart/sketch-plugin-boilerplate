@@ -17,6 +17,9 @@
   },
   "devDependencies": {
     "@skpm/builder": "^0.5.7",
+    "@types/fs-extra": "^5.0.4",
+    "@types/log-update": "^2.0.0",
+    "@types/watch": "^1.0.0",
     "chalk": "^2.4.1",
     "clear": "^0.1.0",
     "fs-extra": "^7.0.0",
@@ -29,15 +32,15 @@
     "rollup-plugin-typescript2": "^0.17.0",
     "sketch.d.ts": "github:andrewstart/sketch.d.ts",
     "ts-loader": "^5.2.1",
+    "ts-node": "^7.0.1",
     "typescript": "^3.0.3",
-    "watch": "^1.0.1",
-    "webpack": "^4.20.2"
+    "watch": "^1.0.1"
   },
   "scripts": {
-    "start": "node scripts/start.js",
-    "build": "node scripts/build.js",
-    "build-prod": "node scripts/build.js --prod",
-    "todos": "node scripts/utils/todos.js",
+    "watch": "ts-node scripts/watch.ts",
+    "build": "ts-node scripts/build.ts",
+    "build-prod": "ts-node scripts/build.ts --prod",
+    "todos": "ts-node scripts/utils/todos.ts",
     "link": "skpm-link"
   },
   "dependencies": {

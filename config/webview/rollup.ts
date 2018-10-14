@@ -1,16 +1,16 @@
-const paths = require('./paths');
-const path = require('path');
-const typescript = require('rollup-plugin-typescript2');
-const collectSass = require('rollup-plugin-collect-sass');
-const nodeResolve = require('rollup-plugin-node-resolve');
-const htmlTemplate = require('rollup-plugin-generate-html-template');
+import paths from './paths';
+import path = require('path');
+import typescript = require('rollup-plugin-typescript2');
+import collectSass = require('rollup-plugin-collect-sass');
+import nodeResolve = require('rollup-plugin-node-resolve');
+import htmlTemplate = require('rollup-plugin-generate-html-template');
 
-exports.input = paths.entry.map((entry) => {
+const input = paths.entry.map((entry) => {
     return {
         input: path.join(paths.src, 'ts', `${entry}.ts`),
         plugins: [
             nodeResolve(),
-            typescript({
+            (typescript as any)({
                 tsconfig: paths.tsconfig,
                 typescript: require('typescript')
             }),
@@ -25,9 +25,14 @@ exports.input = paths.entry.map((entry) => {
     };
 });
 
-exports.output = paths.entry.map((entry) => {
+const output = paths.entry.map((entry) => {
     return {
-        format: 'iife',
+        format: 'iife' as 'iife',
         file: path.join(paths.build, `${entry}.js`)
     };
 });
+
+export {
+    input,
+    output
+};

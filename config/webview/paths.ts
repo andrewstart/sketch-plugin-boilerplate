@@ -1,12 +1,12 @@
-var path = require('path');
-var fs = require('fs-extra');
+import path = require('path');
+import fs = require('fs-extra');
 
-var appDirectory = fs.realpathSync(process.cwd());
+const appDirectory = fs.realpathSync(process.cwd());
 function resolveApp(relativePath) {
   return path.resolve(appDirectory, relativePath);
 }
 
-module.exports = {
+export default {
   src: resolveApp('src/webview/'),
   tsconfig: resolveApp('src/webview/tsconfig.json'),
   build: resolveApp('Resources/webview/'),

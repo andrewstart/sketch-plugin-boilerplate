@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "module": "CommonJS",
+        "target": "es6",
+        "lib": ["ES2017"],
+        "resolveJsonModule": true
+    },
+    "include": [
+        "./scripts/**/*.ts"
+    ]
+}

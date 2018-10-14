@@ -1,23 +1,22 @@
-const fs = require('fs-extra');
-const chalk = require('chalk');
-const webpack = require('webpack');
-const {exec} = require("child_process");
+import fs = require('fs-extra');
+import chalk from 'chalk';
+import child_process = require('child_process');
 
-const paths = require('../../config/plugin/paths');
+import paths from '../../config/plugin/paths';
 
-const manifest = require('../../src/plugin/manifest.json');
-const pkg = require('../../package.json');
+import manifest = require('../../src/plugin/manifest.json');
+import pkg = require('../../package.json');
 
-async function build() {
+export default async function build() {
     console.log(chalk.grey.italic('Build plugin'));
     
     // Copy manifest.json + add version number form manifest
     manifest.version = pkg.version;
     manifest.author = pkg.author;
-    manifest.authorEmail = pkg.authorEmail;
+    (manifest as any).authorEmail = (pkg as any).authorEmail;
     manifest.name = pkg.name;
     manifest.description = pkg.description;
-    fs.outputJson(paths.src + '/manifest.json', manifest, {spaces:4});
+    await fs.outputJson(paths.src + '/manifest.json', manifest, {spaces:4});
     console.log('  ✓ Copy manifest (version ' + pkg.version + ')');
     
     // Copy framework(s)
@@ -37,7 +36,7 @@ async function build() {
         const options = {
             cwd: process.cwd()
         };
-        exec('node_modules/.bin/skpm-build', options, (err, stdout, stderr) => {
+        child_process.exec('node_modules/.bin/skpm-build', options, (err, stdout, stderr) => {
             if (err) {
                 console.error(stderr);
                 return reject(stderr || stdout);
@@ -52,4 +51,12 @@ async function build() {
     console.log();
 }
 
-module.exports = build;
+export async function copyPluginAssets() {
+    console.log(chalk.grey.italic('Copy plugin assets'));
+    
+    // copy additional assets
+    if (await fs.pathExists(paths.assetsSrc)) {
+        await fs.copy(paths.assetsSrc, paths.assets);
+        console.log('  ✓ Copy source assets');
+    }
+}

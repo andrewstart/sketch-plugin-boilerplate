@@ -1,15 +1,12 @@
-const fs = require('fs-extra');
-const chalk = require('chalk');
+import fs = require('fs-extra');
+import chalk from 'chalk';
 
-const rollup = require('rollup');
-const paths = require('../../config/webview/paths');
-const config = require('../../config/webview/rollup');
+import rollup = require('rollup');
+import paths from '../../config/webview/paths';
+import * as config from '../../config/webview/rollup';
 
-async function build() {
+export default async function build() {
     console.log(chalk.grey.italic('Build web views'));
-    
-    await fs.emptyDir(paths.build);
-    console.log('  ✓ Removed old build...');
     
     const input = config.input;
     const output = config.output;
@@ -30,5 +27,3 @@ async function build() {
     // new line
     console.log();
 }
-
-module.exports = build;
