@@ -9,7 +9,6 @@ import { logError } from './utils/build';
 import buildPlugin, {copyPluginAssets} from './plugin/build';
 import buildWebView from './webview/build';
 import pluginPaths from '../config/plugin/paths';
-import webviewPaths from '../config/webview/paths';
 
 main()
 .catch((err) => {
@@ -25,7 +24,8 @@ async function main() {
     }
     console.log();
     
-    await fs.emptyDir(webviewPaths.build);
+    await fs.emptyDir(pluginPaths.assets);
+    await fs.remove(pluginPaths.bundle);
     console.log('✓ Removed old build...');
 
     await buildWebView();

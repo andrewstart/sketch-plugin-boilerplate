@@ -1,9 +1,9 @@
 {
-    "name": "sketch-plugin-boilerplate",
     "identifier": "com.julianburr.sketch-plugin-boilerplate",
-    "description": "Basic development boilerplate for Sketch plugins",
-    "author": "Julian Burr",
     "disableCocoaScriptPreprocessor": false,
+    "compatibleVersion": "52",
+    "bundleVersion": 1,
+    "suppliesData": false,
     "commands": [
         {
             "script": "index.js",
@@ -70,6 +70,5 @@
                 ]
             }
         ]
-    },
-    "version": "0.0.3"
+    }
 }

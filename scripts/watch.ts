@@ -38,7 +38,8 @@ const buildQueue:{buildFunc:()=>Promise<void>, priority:number}[] = [
     // first build starts up by removing previous build
     {
         buildFunc: async () => {
-            await fs.emptyDir(webviewPaths.build);
+            await fs.emptyDir(pluginPaths.assets);
+            await fs.remove(pluginPaths.bundle);
             console.log('✓ Removed old build...');
         },
         priority: 0
