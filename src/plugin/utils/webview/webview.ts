@@ -16,10 +16,6 @@ export function sendActionToWebView(webView:WKWebView, name:string, payload:any 
     webView.evaluateJavaScript_completionHandler(script, null);
 }
 
-// variables for ObjectiveC classes, in case we make more than one in a JS context
-let BridgeMessageHandler:any = null;
-let ViewClass:any = null;
-
 export abstract class BridgedWebView {
     /**
      * Must be overridden so that panels can be recreated automatically for new windows.
@@ -27,6 +23,7 @@ export abstract class BridgedWebView {
     protected abstract onActionReceived(name:string, payload:any):any;
     public fiber:Async.Fiber = null;
     public view:WKWebView = null;
+    public viewController:any = null;
     
     protected init(path:string, frame:NSRect):void {
         const webView = this.createView(frame);
@@ -35,6 +32,19 @@ export abstract class BridgedWebView {
         webView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable);
         webView.loadRequest(NSURLRequest.requestWithURL(url));
         this.view = webView;
+        // every JS class gets it's own copy of ObjCClass because I have yet to figure out how
+        // to set up callbacks on a per JS class basis
+        const ViewController = ObjCClass({
+            classname: 'WebViewController',
+            superclass: NSViewController,
+            ['viewWillDisappear']:() => {
+                if (this.fiber) {
+                    this.fiber.cleanup();
+                }
+            }
+        });
+        this.viewController = ViewController.alloc().init();
+        this.viewController.view = this.view;
         // don't let the JS context get cleaned up while the panel is open
         // consumers of the webview should add their own callbacks (to remove panel/close window)
         this.fiber = Async.createFiber();
@@ -45,32 +55,32 @@ export abstract class BridgedWebView {
         // enable right click -> inspect element
         config.preferences()._developerExtrasEnabled = true;
         // This is a helper delegate, that handles incoming bridge messages
-        if (!BridgeMessageHandler) {
-            BridgeMessageHandler = ObjCClass({
-                'userContentController:didReceiveScriptMessage:':(_controller, message) => {
-                    try {
-                        const bridgeMessage:BridgeMessage = JSON.parse(String(message.body()));
-                        this.receiveAction(bridgeMessage.name, bridgeMessage.payload);
-                    } catch (e) {
-                        console.log('Could not parse bridge message', e, message.body());
-                    }
+        // every JS class gets it's own copy of ObjCClass because I have yet to figure out how
+        // to set up callbacks on a per JS class basis
+        const BridgeMessageHandler = ObjCClass({
+            'userContentController:didReceiveScriptMessage:':(_controller, message) => {
+                try {
+                    const bridgeMessage:BridgeMessage = JSON.parse(String(message.body()));
+                    this.receiveAction(bridgeMessage.name, bridgeMessage.payload);
+                } catch (e) {
+                    console.log('Could not parse bridge message', e, message.body());
                 }
-            });
-        }
+            }
+        });
         const messageHandler = BridgeMessageHandler.alloc().init();
         config.userContentController().addScriptMessageHandler_name(messageHandler, WV_TO_PLUGIN_BRIDGE);
         
-        if (!ViewClass) {
-            ViewClass = ObjCClass({
-                classname: 'WebViewWrapper',
-                superclass: WKWebView,
-                ['viewWillMoveToSuperview:']: (view:NSView|null) => {
-                    if (!view && this.fiber) {
-                        this.fiber.cleanup();
-                    }
+        // every JS class gets it's own copy of ObjCClass because I have yet to figure out how
+        // to set up callbacks on a per JS class basis
+        const ViewClass = ObjCClass({
+            classname: 'WebViewWrapper',
+            superclass: WKWebView,
+            ['viewWillMoveToSuperview:']: (view:NSView|null) => {
+                if (!view && this.fiber) {
+                    this.fiber.cleanup();
                 }
-            });
-        }
+            }
+        });
         return ViewClass.alloc().initWithFrame_configuration(frame, config);
     }
 

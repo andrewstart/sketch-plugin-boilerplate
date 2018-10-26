@@ -4,7 +4,6 @@ import { BridgedWebView, sendActionToWebView } from './webview';
 import {MESSAGE_TO_WV_CONTEXT} from '../../../shared';
 import Settings = require('sketch/settings');
 import Dom = require('sketch/dom');
-import ObjCClass from 'cocoascript-class';
 
 const OPEN_PANELS_KEY = 'open-panels';
 interface OpenPanelData {
@@ -49,7 +48,7 @@ export enum PanelLocation {
     LeftPane
 }
 
-let WindowCloseDelegate:any;
+export const AllDocuments = Symbol('All Documents');
 
 /**
  * Subclass and register to perform actions upon messages from the panel.
@@ -135,6 +134,18 @@ export abstract class Panel extends BridgedWebView {
     }
     
     /**
+     * Immediately removes this panel from all documents. For shutdown cleanup.
+     */
+    public static removeImmediately() {
+        Dom.getDocuments().forEach((doc) => {
+            const view = findPanel(this.IDENTIFIER, doc.sketchObject) as any;
+            if (view) {
+                view.removeFromSuperview();
+            }
+        });
+    }
+    
+    /**
      * Opens or closes this panel for all documents.
      */
     public static toggle() {
@@ -148,7 +159,13 @@ export abstract class Panel extends BridgedWebView {
     /**
      * Send an action to this panel.
      */
-    public static sendAction(name:string, payload:any = {}, document?:MSDocument) {
+    public static sendAction(name:string, payload:any = {}, document?:MSDocument|typeof AllDocuments) {
+        if (document === AllDocuments) {
+            Dom.getDocuments().forEach((doc) => {
+                sendActionToPanel(this.IDENTIFIER, name, payload, doc.sketchObject);
+            });
+            return;
+        }
         sendActionToPanel(this.IDENTIFIER, name, payload, document);
     }
     
@@ -186,18 +203,6 @@ export abstract class Panel extends BridgedWebView {
             // remove the panel from the document
             this.removePanel();
         });
-        // set up a listener for window close, so we can accurately kill the fiber for this
-        // panel when the document is closed (document close event isn't good enough sometimes)
-        if (!WindowCloseDelegate) {
-            WindowCloseDelegate = ObjCClass({
-                'windowWillClose:': () => {
-                    if (this.fiber) {
-                        this.fiber.cleanup();
-                    }
-                },
-            });
-        }
-        (this.document.documentWindow() as any).setDelegate(WindowCloseDelegate.new());
         
         switch (location) {
             case PanelLocation.RightOfDocument:
@@ -271,7 +276,7 @@ export function findPanel(identifier:string, doc?:MSDocument) {
     if (!doc || !doc.documentWindow()) {
         return null;
     }
-    const contentView = (doc || document).documentWindow().contentView();
+    const contentView = doc.documentWindow().contentView();
     if (!contentView) {
         return null;
     }

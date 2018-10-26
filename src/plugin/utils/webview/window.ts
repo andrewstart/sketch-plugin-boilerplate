@@ -8,8 +8,6 @@ export interface WindowOpenOptions {
     title?: string;
 }
 
-let WindowCloseDelegate:any;
-
 export abstract class Window extends BridgedWebView {
     /**
      * Must be overridden so that you can do things when something happens in the panel.
@@ -99,20 +97,19 @@ export abstract class Window extends BridgedWebView {
             }
         });
         // set up a listener for window close, so we can accurately kill the fiber for this
-        // panel when the document is closed (document close event isn't good enough sometimes)
-        if (!WindowCloseDelegate) {
-            WindowCloseDelegate = ObjCClass({
-                'windowWillClose:': () => {
-                    if (this.fiber) {
-                        // don't want to attempt to call close() on the window, so
-                        // we will null the var
-                        this.window = null;
-                        // release the JS context
-                        this.fiber.cleanup();
-                    }
-                },
-            });
-        }
+        // every JS class gets it's own copy of ObjCClass because I have yet to figure out how
+        // to set up callbacks on a per JS class basis
+        const WindowCloseDelegate = ObjCClass({
+            'windowWillClose:': () => {
+                if (this.fiber) {
+                    // don't want to attempt to call close() on the window, so
+                    // we will null the var
+                    this.window = null;
+                    // release the JS context
+                    this.fiber.cleanup();
+                }
+            },
+        });
         this.window.setDelegate(WindowCloseDelegate.new());
     }
 }
